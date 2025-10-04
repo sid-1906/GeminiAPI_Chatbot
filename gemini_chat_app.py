@@ -15,58 +15,57 @@ def get_api_key():
         st.stop()
 
 @st.cache_resource
-def get_gemini_chat_session():
-    """Initializes and caches the Gemini client and chat session."""
+def get_gemini_client():
+    """Cache only the Gemini client, not the chat session."""
     api_key = get_api_key()
-    client = genai.Client(api_key=api_key)
+    return genai.Client(api_key=api_key)
 
+def get_gemini_chat_session(client):
+    """Create a fresh chat session each time."""
     config = types.GenerateContentConfig(
         system_instruction=Content(
             role="system",
             parts=[Part(text="You are a friendly, helpful AI assistant named StreamlitChat. Keep your answers concise but informative.")]
         )
     )
-    
-    chat = client.chats.create(
+    return client.chats.create(
         model="gemini-2.5-flash",
         config=config,
     )
-    return chat
 
 # --- Main Application Logic ---
 
 def main():
     st.set_page_config(page_title="⭐ Gemini Chatbot", page_icon="🤖", layout="wide")
 
-    # --- Sidebar ---
+    # Sidebar
     with st.sidebar:
         st.title("⚙️ Settings")
         if st.button("🗑️ Clear Chat History"):
             st.session_state.clear()
             st.success("Chat history cleared! Refresh to start again.")
-
         st.markdown("---")
         st.markdown("👨‍💻 *Built with Streamlit & Google GenAI*")
 
-    # --- Title ---
     st.title("🤖 Gemini Chatbot")
     st.markdown("Ask me anything and I'll try my best to help! ✨")
 
-    # Initialize chat session
+    # Init client + chat
     try:
-        chat = get_gemini_chat_session()
+        client = get_gemini_client()
+        chat = get_gemini_chat_session(client)
     except Exception as e:
         st.error(f"❌ Failed to start chat session: {e}")
         return
 
-    # Initialize session messages
+    # Init history
     if "messages" not in st.session_state:
         welcome_message = Part(text="👋 Hello! I'm **StreamlitChat**. How can I help you today?")
         st.session_state.messages = [
             Content(role="model", parts=[welcome_message])
         ]
 
-    # --- Display Chat Messages ---
+    # Display messages
     for message in st.session_state.messages:
         role = "user" if message.role == "user" else "assistant"
         with st.chat_message(role):
@@ -76,7 +75,7 @@ def main():
                 else:
                     st.markdown(f"🤖 {message.parts[0].text}")
 
-    # --- Handle User Input ---
+    # Handle input
     if prompt := st.chat_input("Type your message here..."):
         user_message = Content(role="user", parts=[Part(text=prompt)])
         st.session_state.messages.append(user_message)
@@ -84,11 +83,9 @@ def main():
         with st.chat_message("user"):
             st.markdown(f"🧑 {prompt}")
 
-        # Get response
         with st.chat_message("assistant"):
             with st.spinner("🤔 Thinking..."):
                 try:
-                    # Non-streaming call
                     response = chat.send_message(prompt)
                     full_response = response.text if response.text else "⚠️ No response from model."
 
