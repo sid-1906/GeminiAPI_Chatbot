@@ -3,6 +3,7 @@ import os
 from google import genai
 from google.genai import types
 from google.genai.errors import APIError
+from google.genai.types import Content, Part # Explicitly import Content and Part
 
 # --- Configuration and Caching ---
 
@@ -13,7 +14,7 @@ def get_api_key():
         key = st.secrets["GEMINI_API_KEY"]
         return key
     except KeyError:
-        st.error("GEMINI_API_KEY not found. Please set your Gemini API key in Streamlit secrets.")
+        st.error("🔑 **GEMINI_API_KEY** not found. Please set your Gemini API key in Streamlit secrets.")
         st.stop()
 
 @st.cache_resource
@@ -35,7 +36,7 @@ def get_gemini_chat_session():
         model="gemini-2.5-flash",
         config=config,
     )
-    st.success("Gemini chat session started.")
+    st.success("Gemini chat session started. Ready to chat!")
     return chat
 
 # --- Main Application Logic ---
@@ -43,9 +44,9 @@ def get_gemini_chat_session():
 def main():
     st.set_page_config(page_title="Free Gemini Chatbot", page_icon="⭐")
     st.title("⭐ Gemini Chatbot")
-    st.caption("Powered by Gemini 2.5 Flash and Streamlit Community Cloud (Free Tier)")
+    st.caption("Powered by **Gemini 2.5 Flash** and Streamlit Community Cloud (Free Tier)")
 
-    # 1. Initialize chat session and client
+    # 1. Initialize chat session
     try:
         chat = get_gemini_chat_session()
     except:
@@ -54,13 +55,15 @@ def main():
 
     # 2. Initialize Chat History in Session State
     if "messages" not in st.session_state:
+        # Initial welcome message using the correct Content/Part types
+        welcome_message = Part.from_text("Hello! I'm StreamlitChat. How can I help you today?")
         st.session_state.messages = [
-            types.Content(role="model", parts=[types.Part.from_text("Hello! I'm StreamlitChat. How can I help you today?")])
+            Content(role="model", parts=[welcome_message])
         ]
 
     # 3. Display Chat Messages
     for message in st.session_state.messages:
-        # The Streamlit chat message UI uses "user" and "assistant" roles
+        # Streamlit chat message UI uses "user" and "assistant" roles
         role = "user" if message.role == "user" else "assistant"
         with st.chat_message(role):
             # Access the content of the message
@@ -69,7 +72,7 @@ def main():
     # 4. Handle User Input
     if prompt := st.chat_input("Ask a question..."):
         # 4a. Add user message to history and display
-        user_message = types.Content(role="user", parts=[types.Part.from_text(prompt)])
+        user_message = Content(role="user", parts=[Part.from_text(prompt)])
         st.session_state.messages.append(user_message)
         
         with st.chat_message("user"):
@@ -83,22 +86,22 @@ def main():
                     response_stream = chat.send_message(prompt, stream=True)
                     
                     full_response = ""
-                    # Display the response chunk by chunk (streaming)
                     placeholder = st.empty()
                     for chunk in response_stream:
                         if chunk.text:
                             full_response += chunk.text
-                            placeholder.markdown(full_response + "▌") # Use '▌' for typing indicator
+                            # Use markdown to display and the typing indicator
+                            placeholder.markdown(full_response + "▌") 
                     placeholder.markdown(full_response) # Final complete response
 
                     # 4c. Store the final AI response (role 'model' is used by the Gemini SDK)
-                    ai_response_content = types.Content(role="model", parts=[types.Part.from_text(full_response)])
+                    ai_response_content = Content(role="model", parts=[Part.from_text(full_response)])
                     st.session_state.messages.append(ai_response_content)
 
                 except APIError as e:
                     error_message = f"An API Error occurred: {e}"
                     st.error(error_message)
-                    st.session_state.messages.append(types.Content(role="model", parts=[types.Part.from_text("Sorry, I encountered an API error.")]))
+                    st.session_state.messages.append(Content(role="model", parts=[Part.from_text("Sorry, I encountered an API error and couldn't generate a response.")]))
 
 if __name__ == "__main__":
     main()
