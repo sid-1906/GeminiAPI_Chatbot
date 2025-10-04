@@ -49,7 +49,7 @@ def main():
     try:
         chat = get_gemini_chat_session()
     except:
-        # Error message is handled within get_api_key
+        # Execution halts in get_api_key if key is missing
         return
 
     # 2. Initialize Chat History in Session State
@@ -102,32 +102,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-```eof
-
-### 2. Dependencies File (`requirements.txt`)
-
-```markdown:Required Python Libraries:requirements.txt
-streamlit
-google-genai
-```eof
-
-***
-
-## Phase 2: Free Deployment Instructions
-
-1.  **Get Your Key:** Obtain your free-tier **Gemini API Key** from [Google AI Studio](https://aistudio.google.com/app/apikey).
-2.  **GitHub Setup:** Create a **public GitHub repository** and upload both files: `gemini_chat_app.py` and `requirements.txt`.
-3.  **Streamlit Secret:** Set your API key in the Streamlit Cloud secrets management:
-    * Go to your Streamlit Community Cloud dashboard.
-    * Click on **Settings** -> **Secrets**.
-    * Input the following content into the **`.streamlit/secrets.toml`** editor:
-    ```toml
-    # .streamlit/secrets.toml
-    GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE"
-    ```
-4.  **Deploy:** Link your GitHub repository to Streamlit Community Cloud, setting the **Main file path** to `gemini_chat_app.py`. Your chatbot will deploy for free and be accessible via the public URL.
-
-You can find a tutorial for a similar deployment setup on YouTube.
-
-[Building a LLM Chatbot using Google's Gemini Pro with Streamlit Python](https://www.youtube.com/watch?v=sf5MrM0AIiU) will walk you through deploying a Gemini-powered chatbot using Streamlit and Python.
-http://googleusercontent.com/youtube_content/6
