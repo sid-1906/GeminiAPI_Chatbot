@@ -41,7 +41,6 @@ def main():
     # --- Sidebar ---
     with st.sidebar:
         st.title("⚙️ Settings")
-        st.markdown("This chatbot is powered by **Gemini 2.5 Flash**.")
         if st.button("🗑️ Clear Chat History"):
             st.session_state.clear()
             st.success("Chat history cleared! Refresh to start again.")
@@ -89,14 +88,11 @@ def main():
         with st.chat_message("assistant"):
             with st.spinner("🤔 Thinking..."):
                 try:
-                    response_stream = chat.send_message(prompt, stream=True)
-                    full_response = ""
-                    placeholder = st.empty()
-                    for chunk in response_stream:
-                        if chunk.text:
-                            full_response += chunk.text
-                            placeholder.markdown("🤖 " + full_response + "▌")
-                    placeholder.markdown("🤖 " + full_response)
+                    # Non-streaming call
+                    response = chat.send_message(prompt)
+                    full_response = response.text if response.text else "⚠️ No response from model."
+
+                    st.markdown("🤖 " + full_response)
 
                     ai_response = Content(role="model", parts=[Part(text=full_response)])
                     st.session_state.messages.append(ai_response)
